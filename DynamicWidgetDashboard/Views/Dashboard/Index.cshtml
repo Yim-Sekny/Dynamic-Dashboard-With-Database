@@ -1,0 +1,292 @@
+﻿
+@{
+    ViewBag.Title = "Dashboard";
+    Layout = "~/Views/shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style type="text/css">
+        .grid-stack {
+            /*background: lightgoldenrodyellow;*/
+        }
+
+        .grid-stack-item-content {
+            /*color: #2c3e50;
+            background-color: #18bc9c;*/
+            background-color:#FFF;
+        }
+    </style>
+}
+
+<div ng-controller="dashboardCtrl as vm">
+    <div class="card">
+        <div class="card-header">
+            Dynamic Widget complete with database
+        </div>
+        <div class="card-block">
+            <div id="gs-container" class="grid-stack">
+                @*<div class="grid-stack-item"
+                 data-gs-x="0"
+                 data-gs-y="0"
+                 data-gs-width="4"
+                 data-gs-height="3">
+                <div class="grid-stack-item-content">
+                    <canvas id="line-chart"></canvas>
+                </div>
+            </div>
+            <div class="grid-stack-item"
+                 data-gs-x="0"
+                 data-gs-y="0"
+                 data-gs-width="5"
+                 data-gs-height="5">
+                <div class="grid-stack-item-content">
+                    <canvas id="bar-chart"></canvas>
+                </div>
+            </div>
+            <div class="grid-stack-item"
+                 data-gs-x="5"
+                 data-gs-y="0"
+                 data-gs-width="3"
+                 data-gs-height="5">
+                <div class="grid-stack-item-content">
+                    <canvas id="doughnut-chart"></canvas>
+                </div>
+            </div>*@
+                <div class="grid-stack-item"
+                     ng-repeat="row in vm.widgetItem"
+                     data-gs-x="{{row.GsX}}"
+                     data-gs-y="{{row.GsY}}"
+                     data-gs-width="{{row.GsW}}"
+                     data-gs-height="{{row.GsH}}"
+                     data-widget-id="{{row.ItemId}}"
+                     on-finish-render>
+                    <div class="grid-stack-item-content">
+                        <h4>{{row.Widget.WidgetTitle}}</h4>
+                        <canvas id="chart-{{$index + 1}}"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer text-muted">
+            <button type="button" class="btn btn-primary btn-sm" ng-click="vm.fnUpdateWidget('#gs-container', '.grid-stack-item')">Update</button>
+        </div>
+    </div>
+    
+    
+</div>
+
+@section Scripts {
+    <script type="text/javascript">
+        var app = angular.module('app', []);
+
+        app.controller('dashboardCtrl', ['$scope', '$http', function ($scope, $http) {
+            var vm = this;
+            //initial gridstack
+            vm.initGridStack = function () {
+                var options = {
+                    //cell_height: 80,
+                    vertical_margin: 10
+                };
+                $('#gs-container').gridstack(options);
+            };
+            
+            //sample chart data
+            vm.data = [
+                {
+                    type: 'line',
+                    chartData: {
+                        labels: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
+                        datasets: [{
+                            label: 'apples',
+                            data: [12, 19, 3, 17, 6, 3, 7],
+                            //backgroundColor: "rgba(153,255,51,0.6)"
+                        }, {
+                            label: 'oranges',
+                            data: [2, 29, 5, 5, 2, 3, 10],
+                            //backgroundColor: "rgba(255,153,0,0.6)"
+                        }]
+                    }
+                },
+                {
+                    type: 'bar',
+                    chartData: {
+                        labels: ["M", "T", "W", "T", "F", "S", "S"],
+                        datasets: [{
+                            label: 'apples',
+                            data: [12, 19, 3, 17, 28, 24, 7],
+                            //backgroundColor: "rgba(153,255,51,1)"
+                        }, {
+                            label: 'oranges',
+                            data: [30, 29, 5, 5, 20, 3, 10],
+                            //backgroundColor: "rgba(255,153,0,1)"
+                        }]
+                    }
+                },
+                {
+                    type: 'doughnut',
+                    chartData: {
+                        labels: ["M", "T", "W", "T", "F", "S", "S"],
+                        datasets: [{
+                            backgroundColor: [
+                              "#2ecc71",
+                              "#3498db",
+                              "#95a5a6",
+                              "#9b59b6",
+                              "#f1c40f",
+                              "#e74c3c",
+                              "#34495e"
+                            ],
+                            data: [12, 19, 3, 17, 28, 24, 7]
+                        }]
+                    }
+                }
+            ]
+            //get widget
+            $http({
+                method: 'GET',
+                url: '/api/DynamicWidget/GetWidgetItems'
+            }).then(function successCallback(response) {
+                vm.widgetItem = response.data;
+                console.log(vm.widgetItem);
+                
+            }, function errorCallback(response) {
+                console.log(response);
+            });
+            vm.updateWidgetItem = function (widgetItem) {
+                $http({
+                    method: 'Post',
+                    data: widgetItem,
+                    headers: { 'Content-Type': 'application/json' },
+                    url: '/api/DynamicWidget/UpdateWidgetItem'
+                }).then(function successCallback(response) {
+                    console.log(response);
+                    alert('Widget save success');
+
+                }, function errorCallback(response) {
+                    console.log(response);
+                    alert('Error');
+                });
+            }
+            //update widget
+            vm.fnUpdateWidget =  function(classOrId, findClassOrId) {
+                var items = $(classOrId).find(findClassOrId);
+                var widgetObject = [];
+                $.each(items, function (index, value) {
+                    var item = {
+                        itemId: parseInt($(value).attr("data-widget-id")),
+                        gsX: $(value).attr("data-gs-x"),
+                        gsY: $(value).attr("data-gs-y"),
+                        gsW: $(value).attr("data-gs-width"),
+                        gsH: $(value).attr("data-gs-height")
+                    }
+                    widgetObject.push(item);
+                });
+                angular.forEach(vm.widgetItem, function (valueItem, keyItem) {
+                    angular.forEach(widgetObject, function (value, key) {
+                        if (value.itemId == valueItem.ItemId) {
+                            widgetObject[key].Widget = vm.widgetItem[keyItem].Widget;
+                        }
+                    });
+                });
+                vm.updateWidgetItem(widgetObject);
+            };
+
+            //chart.js
+            ////#region line-chart
+            //var ctxLine = document.getElementById('line-chart').getContext('2d');
+            //var lineChart = new Chart(ctxLine, {
+            //    type: 'line',
+            //    data: {
+            //        labels: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
+            //        datasets: [{
+            //            label: 'apples',
+            //            data: [12, 19, 3, 17, 6, 3, 7],
+            //            //backgroundColor: "rgba(153,255,51,0.6)"
+            //        }, {
+            //            label: 'oranges',
+            //            data: [2, 29, 5, 5, 2, 3, 10],
+            //            //backgroundColor: "rgba(255,153,0,0.6)"
+            //        }]
+            //    }
+            //});
+            ////#endregion line-chart
+
+            ////#region bar-chart
+            //var ctxBar = document.getElementById("bar-chart").getContext('2d');
+            //var barChart = new Chart(ctxBar, {
+            //    type: 'bar',
+            //    data: {
+            //        labels: ["M", "T", "W", "T", "F", "S", "S"],
+            //        datasets: [{
+            //            label: 'apples',
+            //            data: [12, 19, 3, 17, 28, 24, 7],
+            //            //backgroundColor: "rgba(153,255,51,1)"
+            //        }, {
+            //            label: 'oranges',
+            //            data: [30, 29, 5, 5, 20, 3, 10],
+            //            //backgroundColor: "rgba(255,153,0,1)"
+            //        }]
+            //    }
+            //});
+            ////#endregion bar-chart
+
+            ////#region doughnut-chart
+            //var ctxCoughnut = document.getElementById("doughnut-chart").getContext('2d');
+            //var doughnutChart = new Chart(ctxCoughnut, {
+            //    type: 'doughnut',
+            //    data: {
+            //        labels: ["M", "T", "W", "T", "F", "S", "S"],
+            //        datasets: [{
+            //            backgroundColor: [
+            //              "#2ecc71",
+            //              "#3498db",
+            //              "#95a5a6",
+            //              "#9b59b6",
+            //              "#f1c40f",
+            //              "#e74c3c",
+            //              "#34495e"
+            //            ],
+            //            data: [12, 19, 3, 17, 28, 24, 7]
+            //        }]
+            //    }
+            //});
+            ////#endregion doughnut-chart
+            //create chart
+            $scope.$on('ngRepeatFinished', function (ngRepeatFinishedEvent) {
+                vm.initGridStack();
+                angular.forEach(vm.widgetItem, function (value, key) {
+                    initChart(vm.data[key].type, 'chart-' + (key + 1), vm.data[key].chartData, null);
+                });
+            });
+            function createChart() {
+                debugger;
+                if (vm.widgetItem) {
+                    angular.forEach(vm.widgetItem, function (value, key) {
+                        initChart(vm.data[key].type, 'chart-' + parseInt(key + 1), vm.data[key].chartData, null);
+                    });
+                }
+            }
+            //init chart
+            function initChart(type, convasId, data, options) {
+                var ctxCoughnut = document.getElementById(convasId).getContext('2d');
+                var doughnutChart = new Chart(ctxCoughnut, {
+                    type: type,
+                    data: data
+                });
+            }
+        }]);
+        
+        app.directive('onFinishRender', function ($timeout) {
+            return {
+                restrict: 'A',
+                link: function (scope, element, attr) {
+                    if (scope.$last === true) {
+                        $timeout(function () {
+                            scope.$emit('ngRepeatFinished');
+                        });
+                    }
+                }
+            }
+        });
+    </script>
+}

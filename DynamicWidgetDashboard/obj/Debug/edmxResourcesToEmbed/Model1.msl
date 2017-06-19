@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+  <EntityContainerMapping StorageEntityContainer="dynamicWidgetModelStoreContainer" CdmEntityContainer="dynamicWidgetEntities">
+    <EntitySetMapping Name="widgets">
+      <EntityTypeMapping TypeName="dynamicWidgetModel.widget">
+        <MappingFragment StoreEntitySet="widget">
+          <ScalarProperty Name="widgetId" ColumnName="widgetId" />
+          <ScalarProperty Name="widgetTitle" ColumnName="widgetTitle" />
+          <ScalarProperty Name="isDelete" ColumnName="isDelete" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+  </EntityContainerMapping>
+</Mapping>
